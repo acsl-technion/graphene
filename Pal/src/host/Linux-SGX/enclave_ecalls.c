@@ -6,10 +6,12 @@
 #include <api.h>
 
 #include "ecall_types.h"
-
+#include "Queue.h"
+#include "mem.h"
 #define SGX_CAST(type, item) ((type) (item))
 
 extern void * enclave_base, * enclave_top;
+extern queue_rpc * rpc_queue;
 
 void pal_linux_main (const char ** arguments, const char ** environments,
                      struct pal_sec * sec_info);
@@ -22,6 +24,8 @@ int enclave_ecall_pal_main (void * pms)
 
     enclave_base = ms->ms_enclave_base;
     enclave_top = ms->ms_enclave_base + ms->ms_enclave_size;
+    rpc_queue = (queue_rpc*)ms->rpc_queue;
+    memsys5Init(NULL, ms->untrusted_buffer, ms->untrusted_buffer_size, 16);
 
     pal_linux_main(ms->ms_arguments,
                    ms->ms_environments,

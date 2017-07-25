@@ -6,7 +6,7 @@
 #include "sgx_internal.h"
 #include "pal_security.h"
 #include "pal_linux_error.h"
-
+#include <pal_debug.h>
 #include <asm/mman.h>
 #include <asm/ioctls.h>
 #include <asm/socket.h>
@@ -16,6 +16,12 @@
 #include <linux/in6.h>
 #include <math.h>
 #include <asm/errno.h>
+
+// Eleos headers
+#include "Queue.h"
+#include "SyncUtils.h"
+#include "request.h"
+
 
 #ifndef SOL_IPV6
 # define SOL_IPV6 41
@@ -722,20 +728,113 @@ void * ocall_table[OCALL_NR] = {
 
 #define EDEBUG(code, ms) do {} while (0)
 
+typedef int (*bridge_fn_t)(const void*);
+volatile int exit_request;
+queue_rpc* rpc_queue;
+
+int do_work(void* arg)
+{
+	request* req = (request*)arg;
+	bridge_fn_t bridge = (bridge_fn_t)(ocall_table[req->ocall_index]);
+	req->result = bridge(req->buffer);
+	rpc_spin_unlock(&req->is_done);
+
+	return 0;
+}
+
+void* start_rpc(int num_of_threads)
+{
+	rpc_queue = (queue_rpc*) INLINE_SYSCALL(mmap, 6, NULL, sizeof(queue_rpc),
+			PROT_READ|PROT_WRITE,
+			MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+	if (IS_ERR_P(rpc_queue))
+		return 0;
+
+	rpc_queue->front = 0;
+	rpc_queue->rear = 0;
+	for (int i=0;i<RPC_QUEUE_SIZE;i++)
+	{
+		rpc_queue->q[i] = (request*)INLINE_SYSCALL(mmap, 6, NULL, sizeof(request),
+				PROT_READ|PROT_WRITE,
+				MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+	}	
+
+	pal_printf("rpc_queue: %p\n", rpc_queue);
+
+	exit_request = false;
+
+	int res = start_rpc_worker(num_of_threads, rpc_queue, (void*)current_enclave, do_work);
+	if (res)
+	{
+		INLINE_SYSCALL(munmap, 2, ALLOC_ALIGNDOWN(rpc_queue),
+				ALLOC_ALIGNUP(rpc_queue+sizeof(queue_rpc)) -
+				ALLOC_ALIGNDOWN(rpc_queue));
+		return NULL;
+	}
+
+	pal_printf("rpc thread started: %p\n", rpc_queue);
+
+	return rpc_queue;
+}
+
+int close_rpc_worker()
+{
+	exit_request = true;
+	INLINE_SYSCALL(munmap, 2, ALLOC_ALIGNDOWN(rpc_queue),
+			ALLOC_ALIGNUP(rpc_queue+sizeof(queue_rpc)) -
+			ALLOC_ALIGNDOWN(rpc_queue));
+
+	return 0;
+}
+
 int ecall_pal_main (const char ** arguments, const char ** environments)
 {
-    struct pal_enclave * enclave = current_enclave;
-    ms_ecall_pal_main_t ms;
+	struct pal_enclave * enclave = current_enclave;
+	ms_ecall_pal_main_t ms;
 
-    ms.ms_arguments = arguments;
-    ms.ms_environments = environments;
-    ms.ms_sec_info = PAL_SEC();
-    ms.ms_enclave_base = (void *) enclave->baseaddr;
-    ms.ms_enclave_size = enclave->size;
+	size_t pool_size = 1024 * 1024 * 1024;
+	void* pool = (void*)INLINE_SYSCALL(mmap, 6, NULL, 2*pool_size,
+			PROT_READ|PROT_WRITE,
+			MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
 
-    EDEBUG(ECALL_PAL_MAIN, &ms);
+	int argc = 1; //sizeof(arguments)/sizeof(char*);
+	for (int i=0; arguments[i]!=NULL; i++)
+		argc++;
+	pal_printf("origargc=%d argc=%d pool: %lld\n", sizeof(arguments), argc, (long long)pool);
 
-    return sgx_ecall(ECALL_PAL_MAIN, &ms);
+	char pool_ptr[40];
+	snprintf(pool_ptr,40,"%lld", (long long)pool);
+
+	pal_printf("pool: %s\n", pool_ptr);
+
+	const char** new_argv = (const char**)INLINE_SYSCALL(mmap, 6, NULL, argc*sizeof(char*),
+			PROT_READ|PROT_WRITE,
+			MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+
+	for (int i=0;i<argc-1;i++)
+	{
+		new_argv[i] = arguments[i];
+	}
+
+	new_argv[argc-1] = pool_ptr;
+
+	ms.ms_arguments = new_argv;
+	ms.ms_environments = environments;
+	ms.ms_sec_info = PAL_SEC();
+	ms.ms_enclave_base = (void *) enclave->baseaddr;
+	ms.ms_enclave_size = enclave->size;
+
+	// Note: currently thread pool is initialized to 1 thread in order to save system resources.
+	// TODO: change this to be more user friendly when RPC adaptive protocol is implemented.
+	ms.rpc_queue = start_rpc(/*num_of_threads=*/1);
+	ms.untrusted_buffer_size = 4 * 1024 * 1024; // 4MB
+	ms.untrusted_buffer = (request*)INLINE_SYSCALL(mmap, 6, NULL, ms.untrusted_buffer_size,
+			PROT_READ|PROT_WRITE,
+			MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+
+	EDEBUG(ECALL_PAL_MAIN, &ms);
+
+	return sgx_ecall(ECALL_PAL_MAIN, &ms);
 }
 
 int ecall_thread_start (void (*func) (void *), void * arg,

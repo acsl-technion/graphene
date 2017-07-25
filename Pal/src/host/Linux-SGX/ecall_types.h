@@ -22,6 +22,9 @@ typedef struct {
     struct pal_sec * ms_sec_info;
     void * ms_enclave_base;
     unsigned long  ms_enclave_size;
+    void * rpc_queue;
+    void* untrusted_buffer;
+    size_t untrusted_buffer_size;    
 } ms_ecall_pal_main_t;
 
 typedef struct {

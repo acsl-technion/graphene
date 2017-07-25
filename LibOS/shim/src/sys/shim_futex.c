@@ -145,6 +145,9 @@ int shim_do_futex (unsigned int * uaddr, int op, int val, void * utime,
             list_add_tail(&waiter.list, &futex->waiters);
 
             unlock(hdl->lock);
+	/* 
+	 * Workaround around deadlock in futex implementation in this revision.
+
             if (utime) {
                 struct timespec *ts = (struct timespec*) utime;
                 // Round to microsecs
@@ -162,6 +165,7 @@ int shim_do_futex (unsigned int * uaddr, int op, int val, void * utime,
                     timeout_us -= current_time;
                 }
             }
+	*/
             ret = thread_sleep(timeout_us);
             /* DEP 1/28/17: Should return ETIMEDOUT, not EAGAIN, on timeout. */
             if (ret == -EAGAIN)

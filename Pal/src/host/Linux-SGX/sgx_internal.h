@@ -31,6 +31,8 @@
 #include "pal_security.h"
 #include "api.h"
 
+#include "request.h"
+
 #include "sysdep-x86_64.h"
 #include <sys/syscall.h>
 
@@ -133,5 +135,14 @@ void sgx_edbgwr (void * addr, uint64_t data);
 
 int sgx_init_child_process (struct pal_sec * pal_sec);
 int sgx_signal_setup (void);
+
+int init_untrusted_allocator (struct pal_sec * pal_sec);
+
+typedef int rpc_worker_func(void*);
+
+int start_rpc_worker(int num_of_threads, void* _rpc_queue, void* arg, rpc_worker_func* _func);
+
+typedef int (*br_fn_t)(const void*);
+int call_async(br_fn_t bridge, void* req);
 
 #endif

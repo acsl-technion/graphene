@@ -9,10 +9,10 @@ defs	= -DIN_PAL -DPAL_DIR=$(PAL_DIR) -DRUNTIME_DIR=$(RUNTIME_DIR)
 enclave-objs = $(addprefix db_,files devices pipes sockets streams memory \
 		 threading semaphore mutex events process object main rtld \
 		 exception misc ipc spinlock) \
-	       $(addprefix enclave_,ocalls ecalls framework pages untrusted) \
+	       $(addprefix enclave_,ocalls ecalls framework pages untrusted queue syncutils mem) \
 	       $(patsubst %.c,%,$(wildcard crypto/*.c))
 enclave-asm-objs = enclave_entry $(patsubst %.S,%,$(wildcard crypto/*.S))
-urts-objs = $(addprefix sgx_,enclave framework main rtld thread process exception graphene)
+urts-objs = $(addprefix sgx_,enclave framework main rtld thread process exception graphene queue syncutils)
 urts-asm-objs = sgx_entry
 graphene_lib = ../../.lib/graphene-lib.a
 headers	= $(wildcard *.h) $(wildcard ../../*.h) $(wildcard ../../../lib/*.h)
