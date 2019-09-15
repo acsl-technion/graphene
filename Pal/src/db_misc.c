@@ -143,3 +143,14 @@ DkCpuIdRetrieve(PAL_IDX leaf, PAL_IDX subleaf, PAL_IDX values[4]) {
 
     LEAVE_PAL_CALL_RETURN(PAL_TRUE);
 }
+
+
+PAL_NUM
+DkCosmixUntrustedAlloc (PAL_NUM size, PAL_PTR umem)
+{
+    ENTER_PAL_CALL(DkCosmixUntrustedAlloc);
+
+    int ret = _DkCosmixUntrustedAlloc(size, umem);
+
+    LEAVE_PAL_CALL_RETURN(ret);
+}

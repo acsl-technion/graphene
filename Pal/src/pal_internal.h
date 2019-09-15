@@ -355,6 +355,8 @@ int _DkPhysicalMemoryCommit (PAL_HANDLE channel, int entries,
 int _DkPhysicalMemoryMap (PAL_HANDLE channel, int entries,
                           PAL_PTR * addrs, PAL_NUM * sizes, PAL_FLG * prots);
 int _DkCpuIdRetrieve (unsigned int leaf, unsigned int subleaf, unsigned int values[4]);
+int _DkCosmixUntrustedAlloc(size_t size, void* umem);
+
 
 #define INIT_FAIL(exitcode, reason)                                     \
     do {                                                                \

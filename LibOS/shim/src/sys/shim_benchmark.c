@@ -59,3 +59,12 @@ size_t shim_do_recv_rpc(pid_t* pid, void* buf, size_t size) {
         *pid = sender;
     return ret;
 }
+
+
+int shim_do_cosmix_untrusted_alloc(size_t size, void** umem)
+{
+    // Propagate till PAL newly added ocall
+    //
+    uint64_t ret = DkCosmixUntrustedAlloc((uint64_t)size, (void*)umem);
+    return (int)ret;
+}

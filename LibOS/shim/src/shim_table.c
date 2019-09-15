@@ -338,6 +338,7 @@ shim_fp shim_table[LIBOS_SYSCALL_BOUND] = {
     (shim_fp)__shim_sendmmsg,
     (shim_fp)__shim_setns,
     (shim_fp)__shim_getcpu,
+    (shim_fp)__shim_cosmix_untrusted_alloc,
 
     [LIBOS_SYSCALL_BASE] = (shim_fp)NULL,
 

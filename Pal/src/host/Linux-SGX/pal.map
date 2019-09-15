@@ -40,6 +40,7 @@ PAL {
         DkSegmentRegister; # set segment register
         DkMemoryAvailableQuota;
         DkCpuIdRetrieve; # retrieve CPUID
+        DkCosmixUntrustedAlloc; # cosmix
 
         # Debugging ABIs
         pal_printf; pal_snprintf; DkDebugAttachBinary; DkDebugDetachBinary;

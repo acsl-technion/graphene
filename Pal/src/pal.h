@@ -542,6 +542,9 @@ PAL_NUM DkMemoryAvailableQuota (void);
 PAL_BOL
 DkCpuIdRetrieve (PAL_IDX leaf, PAL_IDX subleaf, PAL_IDX values[4]);
 
+PAL_NUM
+DkCosmixUntrustedAlloc (PAL_NUM size, PAL_PTR umem);
+
 #ifdef __GNUC__
 # define symbol_version_default(real, name, version) \
     __asm__ (".symver " #real "," #name "@@" #version "\n")

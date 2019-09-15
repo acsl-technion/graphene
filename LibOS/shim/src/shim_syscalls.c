@@ -486,6 +486,9 @@ DEFINE_SHIM_SYSCALL(getpgrp, 0, shim_do_getpgrp, pid_t)
 /* setsid: sys/shim_getpid.c */
 DEFINE_SHIM_SYSCALL(setsid, 0, shim_do_setsid, int)
 
+/* cosmix syscall */
+DEFINE_SHIM_SYSCALL (cosmix_untrusted_alloc, 2, shim_do_cosmix_untrusted_alloc, int, size_t, size, void**, umem)
+
 SHIM_SYSCALL_PASSTHROUGH(setreuid, 2, int, uid_t, ruid, uid_t, euid)
 
 SHIM_SYSCALL_PASSTHROUGH(setregid, 2, int, gid_t, rgid, gid_t, egid)

@@ -165,3 +165,9 @@ int _DkCpuIdRetrieve(unsigned int leaf, unsigned int subleaf, unsigned int value
     add_cpuid_to_cache(leaf, subleaf, values);
     return 0;
 }
+
+int _DkCosmixUntrustedAlloc(size_t size, void* umem)
+{
+    int retval = ocall_alloc_untrusted(ALLOC_ALIGNUP(size), (void**)umem);
+    return retval;
+}

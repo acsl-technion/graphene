@@ -393,6 +393,7 @@ struct parser_table {
         {.slow = 1, .parser = {NULL}}, /* benchmark_ipc */
         {.slow = 1, .parser = {NULL}}, /* send_rpc */
         {.slow = 1, .parser = {NULL}}, /* recv_rpc */
+        {.slow = 1, .parser = {NULL}}, /* cosmix */
 };
 
 static inline int is_pointer(const char* type) {

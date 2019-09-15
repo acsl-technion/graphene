@@ -41,6 +41,9 @@ struct sigcp {
 
 #define SIGCP 33
 
+#define __NR_cosmix_untrusted_alloc (LIBOS_SYSCALL_BASE + 9)
+int cosmix_untrusted_alloc(size_t,void**);
+
 #include "shim_unistd_defs.h"
 
 #endif /* _SHIM_UNISTD_H_ */
